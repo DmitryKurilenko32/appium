@@ -1,10 +1,10 @@
-import io.appium.java_client.MobileElement;
+import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -13,8 +13,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class SampleTest {
+    enum Platform {Android, IOS}
 
-    private AndroidDriver driver;
+    Platform platform = Platform.Android;
+
+    private AppiumDriver driver;
+    private MobileObjects mobileObjects;
 
     private URL getUrl() {
         try {
@@ -28,60 +32,62 @@ public class SampleTest {
     @BeforeEach
     public void setUp() {
         DesiredCapabilities desiredCapabilities = new DesiredCapabilities();
-        desiredCapabilities.setCapability("platformName", "android");
-        desiredCapabilities.setCapability("appium:deviceName", "device");
-        desiredCapabilities.setCapability("appium:appPackage", "ru.netology.testing.uiautomator");
-        desiredCapabilities.setCapability("appium:appActivity", "ru.netology.testing.uiautomator.MainActivity");
-        desiredCapabilities.setCapability("appium:automationName", "uiautomator2");
         desiredCapabilities.setCapability("appium:ensureWebviewsHavePages", true);
         desiredCapabilities.setCapability("appium:nativeWebScreenshot", true);
         desiredCapabilities.setCapability("appium:newCommandTimeout", 3600);
         desiredCapabilities.setCapability("appium:connectHardwareKeyboard", true);
 
-        driver = new AndroidDriver(getUrl(), desiredCapabilities);
+        if (platform == Platform.Android) {
+            desiredCapabilities.setCapability("platformName", "android");
+            desiredCapabilities.setCapability("appium:deviceName", "device");
+            desiredCapabilities.setCapability("appium:appPackage", "ru.netology.testing.uiautomator");
+            desiredCapabilities.setCapability("appium:appActivity", "ru.netology.testing.uiautomator.MainActivity");
+            desiredCapabilities.setCapability("appium:automationName", "uiautomator2");
+            driver = new AndroidDriver(getUrl(), desiredCapabilities);
+
+        } else if (platform == Platform.IOS) {
+            desiredCapabilities.setCapability("platformName", "");
+            desiredCapabilities.setCapability("appium:deviceName", "");
+            desiredCapabilities.setCapability("appium:bundleId", "");
+            desiredCapabilities.setCapability("appium:appActivity", "");
+            desiredCapabilities.setCapability("appium:automationName", "");
+            driver = new IOSDriver<>(getUrl(), desiredCapabilities);
+
+        }
+        mobileObjects = new MobileObjects(driver);
 
 
     }
-    String homePageText = "Hello UiAutomator!";
 
+
+    String homePageText = "Hello UiAutomator!";
     @Test
     public void emptyString() {
-        MobileElement el3 = (MobileElement) driver.findElement(By.id("ru.netology.testing.uiautomator:id/buttonChange"));
-        el3.isDisplayed();
-        el3.click();
-        MobileElement el5 = (MobileElement) driver.findElement(By.id("ru.netology.testing.uiautomator:id/textToBeChanged"));
-        el3.isDisplayed();
-        Assertions.assertEquals(homePageText, el5.getText());
+        mobileObjects.buttonChange.isDisplayed();
+        mobileObjects.buttonChange.click();
+        mobileObjects.textToBeChanged.isDisplayed();
+        Assertions.assertEquals(homePageText, mobileObjects.textToBeChanged.getText());
     }
-
     @Test
     public void sendingSpace() {
-        MobileElement el2 = (MobileElement) driver.findElement(By.id("ru.netology.testing.uiautomator:id/userInput"));
-        el2.isDisplayed();
-        el2.sendKeys(" ");
-        MobileElement el3 = (MobileElement) driver.findElement(By.id("ru.netology.testing.uiautomator:id/buttonChange"));
-        el3.isDisplayed();
-        el3.click();
-        MobileElement el5 = (MobileElement) driver.findElement(By.id("ru.netology.testing.uiautomator:id/textToBeChanged"));
-        el5.isDisplayed();
-        Assertions.assertEquals(homePageText, el5.getText());
+        mobileObjects.userInput.isDisplayed();
+        mobileObjects.userInput.sendKeys(" ");
+        mobileObjects.buttonChange.isDisplayed();
+        mobileObjects.buttonChange.click();
+        mobileObjects.textToBeChanged.isDisplayed();
+        Assertions.assertEquals(homePageText, mobileObjects.textToBeChanged.getText());
     }
-
     @Test
     public void newActivity() {
         WebDriverWait wait = new WebDriverWait(driver, 30);
-        MobileElement el1 = (MobileElement) driver.findElement(By.id("ru.netology.testing.uiautomator:id/userInput"));
-        el1.isDisplayed();
-        el1.sendKeys("hello");
-        MobileElement el2 = (MobileElement) driver.findElement(By.id("ru.netology.testing.uiautomator:id/buttonActivity"));
-        el2.isDisplayed();
-        el2.click();
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("ru.netology.testing.uiautomator:id/text")));
-        MobileElement el4 = (MobileElement) driver.findElement(By.id("ru.netology.testing.uiautomator:id/text"));
-        el4.isDisplayed();
-        Assertions.assertEquals("hello", el4.getText());
+        mobileObjects.userInput.isDisplayed();
+        mobileObjects.userInput.sendKeys("hello");
+        mobileObjects.buttonActivity.isDisplayed();
+        mobileObjects.buttonActivity.click();
+        wait.until(ExpectedConditions.visibilityOfAllElements(mobileObjects.textActivity));
+        mobileObjects.textActivity.isDisplayed();
+        Assertions.assertEquals("hello", mobileObjects.textActivity.getText());
     }
-
     @AfterEach
     public void tearDown() {
         driver.quit();
